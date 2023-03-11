@@ -23,6 +23,8 @@ pub struct Version {
 
 impl fmt::Display for Version {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // If the spec doesn't allow unknown versions panicking here would be fine as long as the
+        // type Version internally uphodls that invariant, since its fields are public it doesn't
         let version_string = match &self.major {
             45 => "JDK 1.1",
             46 => "JDK 1.2",
@@ -54,13 +56,17 @@ impl fmt::Display for Version {
     }
 }
 
+// uh just a style thing, those comments weren't aligned so I'd put them above instead idk
 #[derive(Debug)]
 pub enum ConstantPoolInfo {
-    Class(usize),           // name index
-    FieldRef(usize, usize), // class index, name_and_type index
+    // name index
+    Class(usize),
+    // class index, name_and_type index
+    FieldRef(usize, usize),
     MethodRef(usize, usize),
     InterfaceMethodRef(usize, usize),
-    String(usize), // index to utf8 value
+    // index to utf8 value
+    String(usize),
     Integer(u32),
     Float(u32),
     Long(u32, u32),
