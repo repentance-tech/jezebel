@@ -203,6 +203,8 @@ fn parse_constant_pool(bytes: Input<'_>) -> IResult<Input<'_>, Vec<ConstantPoolI
 fn parse_flags(bytes: Input<'_>) -> IResult<Input<'_>, AccessFlags> {
     map(be_u16, |b: u16| match AccessFlags::from_bits(b) {
         Some(flags) => flags,
+        // the combinators make it hard to return a custom error here, but I think nom allows that
+        // actually, but I may be wrong
         None => panic!("Invalid bytes for access flags"),
     })(bytes)
 }
@@ -213,6 +215,9 @@ fn parse_interfaces(bytes: Input<'_>) -> IResult<Input<'_>, Vec<usize>> {
     count(parse_index, interface_count.into())(rest)
 }
 
+// avoid using IResult here, it is a parser specific result and doesn't concern the consumer, it can
+// still be exposed as a low level primitive, but a highlevel easy to consume API shoudl be given
+// like below
 pub fn parse_classfile(bytes: Input<'_>) -> IResult<Input<'_>, ClassFile> {
     let (rest, _) = parse_magic(bytes)?;
     let (rest, version) = parse_version(rest)?;
@@ -233,4 +238,32 @@ pub fn parse_classfile(bytes: Input<'_>) -> IResult<Input<'_>, ClassFile> {
             interfaces,
         },
     ))
+}
+
+// makes this error type non {de,con}structable outside this crate
+#[non_exhaustive]
+#[derive(Debug)]
+pub struct ClassFileParseError {
+    // todo
+}
+
+// this + Error impl can be done simply using the thiserror crate
+impl std::fmt::Display for ClassFileParseError {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!("expose simple error message showing where the input was malformed")
+    }
+}
+
+impl std::error::Error for ClassFileParseError {}
+
+// expose this as the primary primitive to parse a class file
+pub fn parse<B: AsRef<[u8]>>(input: B) -> Result<ClassFile, ClassFileParseError> {
+    match parse_classfile(input.as_ref()) {
+        // no bytes of input remain (if this is desired) and the class file was parsed
+        Ok(([], class_file)) => Ok(class_file),
+        // not sure if this is actually possible
+        Ok((_rest, _class_file)) => todo!("there was remaining input after the class file"),
+        // construct an expressive error here
+        Err(_err) => todo!(),
+    }
 }
