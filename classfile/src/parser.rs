@@ -20,7 +20,13 @@ fn parse_index(bytes: Input<'_>) -> IResult<Input<'_>, usize> {
 }
 
 fn parse_magic(bytes: Input<'_>) -> IResult<Input<'_>, &[u8]> {
-    tag([0xCA, 0xFE, 0xBA, 0xBE])(bytes)
+    // consider using constnts with names instead of literals, or link the the spec where these are
+    // used
+
+    // <link to spec>
+    const MAGIC_PREFIX: [u8; 4] = [0xCA, 0xFE, 0xBA, 0xBE];
+
+    tag(MAGIC_PREFIX)(bytes)
 }
 
 fn parse_version(bytes: Input<'_>) -> IResult<Input<'_>, Version> {
